@@ -2,12 +2,53 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>我的个人网站</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>蓝猫果果 · 纪念我的小蓝猫</title>
+  <meta name="description" content="纪念我家蓝猫果果的个人网站，收藏我们一起度过的温暖时光。">
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <h1>你好，我是R一一</h1>
-  <p>这是我的个人网站。</p>
+  <header class="hero">
+    <img src="./images/avatar.png" alt="蓝猫果果" class="hero-avatar">
+    <h1>蓝猫果果</h1>
+    <p class="subtitle">每一张照片，都是一段温暖的回忆。<br>谢谢你曾来到我的世界。</p>
+    <span class="scroll-hint">向下滚动 ↓</span>
+  </header>
+
+  <section id="about" class="reveal">
+    <h2 class="section-title">关于果果</h2>
+    <div class="about-card">
+      <p>你是一只灰蓝色的小英国短毛猫，毛茸茸、软绵绵，总爱挑家里最舒服的地方蜷成一团。</p>
+      <p>虽然你已经去了喵星，但手机里的每一张照片，都让我想起你打呼噜、伸懒腰、歪着头看我的样子。</p>
+      <p>这个小网站，是我留给你的小小纪念。</p>
+    </div>
+  </section>
+
+  <section id="stats" class="reveal">
+    <div class="stats">
+      <div class="stat-card"><div class="stat-number">49</div><div class="stat-label">张照片</div></div>
+      <div class="stat-card"><div class="stat-number">∞</div><div class="stat-label">无尽的想念</div></div>
+      <div class="stat-card"><div class="stat-number">永远</div><div class="stat-label">活在我心里</div></div>
+    </div>
+  </section>
+
+  <section id="gallery" class="reveal">
+    <h2 class="section-title">果果的相册</h2>
+    <div class="gallery" id="galleryGrid"></div>
+  </section>
+
+  <footer>
+    <p>永远爱你，果果。</p>
+    <p>Made with ❤️ by R一一</p>
+  </footer>
+
+  <div class="lightbox" id="lightbox">
+    <button class="btn close" id="closeBtn" aria-label="关闭">✕</button>
+    <button class="btn arrow prev" id="prevBtn" aria-label="上一张">‹</button>
+    <img src="" alt="果果" id="lightboxImg">
+    <button class="btn arrow next" id="nextBtn" aria-label="下一张">›</button>
+    <div class="counter" id="counter">1 / 49</div>
+  </div>
 
   <script src="./script.js"></script>
 </body>
