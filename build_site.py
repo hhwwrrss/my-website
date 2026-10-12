@@ -614,7 +614,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>蓝猫果果 · 纪念我的小蓝猫</title>
   <meta name="description" content="纪念我家蓝猫果果的个人网站，收藏我们一起度过的温暖时光。">
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=20261012">
 </head>
 <body>
   <header class="hero">
@@ -659,7 +659,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div class="counter" id="counter">1 / __PHOTO_COUNT__</div>
   </div>
 
-  <script src="./script.js"></script>
+  <script src="./script.js?v=20261012"></script>
 </body>
 </html>
 """
