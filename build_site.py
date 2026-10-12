@@ -2,8 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 Static gallery generator for 蓝猫果果.
-Run this script after adding new photos; it regenerates thumbs/ + index.html/style.css/script.js.
+Run this script after adding new photos; it regenerates thumbs/ + medium/ + index.html/style.css/script.js.
 Deploy: push everything to GitHub, Cloudflare Pages auto-publishes.
+
+布局说明：
+  原图  -> originals/（仅本地存档，不进 git、不部署）
+  缩略图 -> thumbs/   （相册网格，~600px，部署）
+  灯箱图 -> medium/   （放大查看，~1600px，部署）
 """
 
 import json
@@ -16,41 +21,49 @@ except ImportError as exc:
     raise SystemExit("缺少 Pillow。请运行: pip install Pillow") from exc
 
 ROOT = Path(__file__).resolve().parent
-THUMB_DIR = ROOT / "thumbs"
+ORIGINALS_DIR = ROOT / "originals"
+OUTPUT_DIR = ROOT / "public"
+THUMB_DIR = OUTPUT_DIR / "thumbs"
 THUMB_W = 600
 THUMB_QUALITY = 82
-AVATAR = ROOT / "images" / "avatar.png"
+MEDIUM_DIR = OUTPUT_DIR / "medium"
+MEDIUM_W = 1600
+MEDIUM_QUALITY = 80
+AVATAR_SRC = ROOT / "images" / "avatar.png"
+AVATAR_DST = OUTPUT_DIR / "images" / "avatar.png"
 
 IMG_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
-HTML_PATH = ROOT / "index.html"
-CSS_PATH = ROOT / "style.css"
-JS_PATH = ROOT / "script.js"
+HTML_PATH = OUTPUT_DIR / "index.html"
+CSS_PATH = OUTPUT_DIR / "style.css"
+JS_PATH = OUTPUT_DIR / "script.js"
 
 
 def collect_images():
-    """Find all images in ROOT, excluding the avatar and files under thumbs/."""
+    """Find all original photos inside originals/."""
+    if not ORIGINALS_DIR.exists():
+        return []
     imgs = []
-    for p in sorted(ROOT.iterdir()):
+    for p in sorted(ORIGINALS_DIR.iterdir()):
         if not p.is_file():
             continue
         if p.suffix.lower() not in IMG_SUFFIXES:
-            continue
-        if p.name.lower() == "avatar.png" and "images" in p.parts:
-            continue
-        if p.parent == THUMB_DIR:
             continue
         imgs.append(p)
     return imgs
 
 
-def ensure_thumbs_dir():
+def ensure_output_dirs():
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     THUMB_DIR.mkdir(parents=True, exist_ok=True)
-    # Remove stale thumbs whose originals no longer exist.
+    MEDIUM_DIR.mkdir(parents=True, exist_ok=True)
+    AVATAR_DST.parent.mkdir(parents=True, exist_ok=True)
+    # Remove stale thumbs/mediums whose originals no longer exist.
     current = {p.name for p in collect_images()}
-    for t in THUMB_DIR.iterdir():
-        if t.is_file() and t.name not in current:
-            t.unlink()
+    for d in (THUMB_DIR, MEDIUM_DIR):
+        for t in d.iterdir():
+            if t.is_file() and t.name not in current:
+                t.unlink()
 
 
 def make_thumbnail(src: Path) -> Path:
@@ -84,15 +97,45 @@ def make_thumbnail(src: Path) -> Path:
     return dst
 
 
+def make_medium(src: Path) -> Path:
+    dst = MEDIUM_DIR / (src.stem + ".jpg")
+    try:
+        with Image.open(src) as im:
+            if im.mode in ("RGBA", "P"):
+                bg = Image.new("RGB", im.size, (255, 255, 255))
+                if im.mode == "P":
+                    im = im.convert("RGBA")
+                bg.paste(im, mask=im.split()[3])
+                im = bg
+            else:
+                im = im.convert("RGB")
+
+            if im.width > MEDIUM_W:
+                ratio = MEDIUM_W / im.width
+                new_h = max(1, int(im.height * ratio))
+                try:
+                    resample = Image.Resampling.LANCZOS
+                except AttributeError:
+                    resample = Image.LANCZOS
+                im = im.resize((MEDIUM_W, new_h), resample)
+
+            im.save(dst, "JPEG", quality=MEDIUM_QUALITY, optimize=True)
+    except Exception as exc:
+        print(f"生成中等图失败 {src.name}: {exc}")
+        shutil.copy2(src, dst)
+    return dst
+
+
 def build_gallery_data(images):
     data = []
     for img in images:
         thumb = make_thumbnail(img)
+        medium = make_medium(img)
         with Image.open(img) as im:
             w, h = im.size
         data.append(
             {
-                "full": img.name.replace("\\", "/"),
+                "full": f"medium/{medium.name}".replace("\\", "/"),
                 "thumb": f"thumbs/{thumb.name}".replace("\\", "/"),
                 "w": w,
                 "h": h,
@@ -623,7 +666,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
 
 def main():
-    ensure_thumbs_dir()
+    ensure_output_dirs()
     images = collect_images()
     if not images:
         print("未找到照片。请把照片放在本脚本同级目录下。")
@@ -643,9 +686,15 @@ def main():
     html = HTML_TEMPLATE.replace("__PHOTO_COUNT__", str(len(images)))
     HTML_PATH.write_text(html, encoding="utf-8")
 
+    # Copy avatar into output dir
+    if AVATAR_SRC.exists():
+        shutil.copy2(AVATAR_SRC, AVATAR_DST)
+    else:
+        print(f"警告：未找到头像 {AVATAR_SRC}")
+
     print(f"完成。gallery 共 {len(data)} 张照片。")
     print(f"生成文件：{HTML_PATH.name}, {CSS_PATH.name}, {JS_PATH.name}")
-    print(f"缩略图目录：{THUMB_DIR}")
+    print(f"输出目录：{OUTPUT_DIR}")
 
 
 if __name__ == "__main__":

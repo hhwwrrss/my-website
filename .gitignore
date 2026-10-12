@@ -1,5 +1,8 @@
-# 阻止 wrangler 把 git 内部文件当静态资源上传
+# git 内部文件不进入部署包（站点通过 wrangler.jsonc 指定 public/ 为发布目录）
 .git/
+
+# 原图仅本地存档，不进 git、不部署（网站用 thumbs/ 和 medium/）
+originals/
 
 # 本地开发/构建产物
 .wrangler/
